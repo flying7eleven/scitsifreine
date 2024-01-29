@@ -1,7 +1,6 @@
 from math import ceil, floor
 from os import environ
 from subprocess import Popen, PIPE
-from argparse import ArgumentParser
 
 
 class TmuxSession(object):
@@ -77,16 +76,3 @@ class TmuxSession(object):
 
     def _attach_session(self):
         TmuxSession._execute_command(f'tmux attach-session -t {self._session_name}:0')
-
-
-def main():
-    arg_parser = ArgumentParser(prog='scitsifréine',
-                                description='Helper script for creating multiple ssh sessions using tmux',
-                                epilog='See more details at: https://docs.tmux.org')
-    arg_parser.add_argument('hosts', metavar='hosts', type=str, nargs='+', help='a list of hosts to connect to')
-    args = arg_parser.parse_args()
-    TmuxSession(hosts=args.hosts)
-
-
-if __name__ == '__main__':
-    main()
