@@ -49,17 +49,17 @@ class TmuxSession(object):
         TmuxSession.__execute_command(f'tmux new-session -d -s {self._session_name}')
 
         # rename the first window of the session to reflect the purpose
-        TmuxSession.__execute_command(f'tmux rename-window -t 0 ssh-sessions')
+        TmuxSession.__execute_command('tmux rename-window -t 0 ssh-sessions')
 
     def __create_split_panes(self):
         v_splits = pane_idx = 0
         vertical_splits_remaining, horizontal_splits_remaining = TmuxSession.__calculate_split_panes(self._hosts)
         while vertical_splits_remaining > 0 and v_splits < 2:
-            TmuxSession.__execute_command(f'tmux split-window -v')
+            TmuxSession.__execute_command('tmux split-window -v')
             vertical_splits_remaining -= 1
         while horizontal_splits_remaining > 0:
             TmuxSession.__execute_command(f'tmux select-pane -t {pane_idx}')
-            TmuxSession.__execute_command(f'tmux split-window -h')
+            TmuxSession.__execute_command('tmux split-window -h')
             pane_idx += 2
             horizontal_splits_remaining -= 1
 
