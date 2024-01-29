@@ -61,7 +61,6 @@ class TmuxSession(object):
     def __open_ssh_connections(self):
         for pane_idx in range(0, len(self._hosts)):
             current_host = self._hosts[pane_idx]
-            print(current_host)
             TmuxSession.__execute_command(f'tmux select-pane -t {pane_idx} -T {current_host}')
             TmuxSession.__execute_command(f'tmux send-keys -t {pane_idx} "ssh {current_host}" C-m')
 
