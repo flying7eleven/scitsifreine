@@ -19,7 +19,7 @@ maintainers = [
 ]
 # see https://pypi.org/classifiers/
 classifiers = [
-  "Development Status :: 4 - Beta",
+  "Development Status :: 3 - Alpha",
   "Intended Audience :: Developers",
   "Intended Audience :: System Administrators",
   "Topic :: System :: Systems Administration",
