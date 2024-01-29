@@ -80,7 +80,7 @@ class TmuxSession(object):
 
 
 def main():
-    arg_parser = ArgumentParser(prog='multissh',
+    arg_parser = ArgumentParser(prog='scitsifréine',
                                 description='Helper script for creating multiple ssh sessions using tmux',
                                 epilog='See more details at: https://docs.tmux.org')
     arg_parser.add_argument('hosts', metavar='hosts', type=str, nargs='+', help='a list of hosts to connect to')
