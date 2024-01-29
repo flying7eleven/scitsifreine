@@ -1,6 +1,8 @@
 from math import ceil, floor
 from os import environ
 from subprocess import Popen, PIPE
+
+from scitsifreine import internal
 from scitsifreine.exceptions import InsideTmuxSession, TmuxCommunicationError
 
 
@@ -11,7 +13,7 @@ class TmuxSession(object):
         if self.__has_open_tmux_session():
             raise InsideTmuxSession('Cannot run script inside of an existing tmux session')
         self._hosts = hosts
-        self._session_name = self.__generate_session_name(host_list=self._hosts)
+        self._session_name = internal.generate_session_name(host_list=self._hosts)
         self.__create_tmux_session()
         self.__create_split_panes()
         self.__open_ssh_connections()
@@ -25,13 +27,6 @@ class TmuxSession(object):
 
     def __str__(self):
         return f'TmuxSession(session_name=\'{self._session_name}\')'
-
-    @staticmethod
-    def __generate_session_name(host_list: [str], prefix='multissh'):
-        session_name = f'{prefix}-'
-        for current_host in host_list:
-            session_name += f'{current_host.split(".")[0]}-'
-        return session_name[:-1]
 
     @staticmethod
     def __has_open_tmux_session():
