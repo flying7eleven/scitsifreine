@@ -6,12 +6,13 @@ from scitsifreine.exceptions import InsideTmuxSession, TmuxCommunicationError
 
 
 class TmuxSession(object):
-    def __init__(self, hosts: [str]):
+    def __init__(self, hosts: [str], close_on_exit: bool = False):
         if len(hosts) < 2:
             raise ValueError('You must specify at least two hosts to connect to')
         if self.__has_open_tmux_session():
             raise InsideTmuxSession('Cannot run script inside of an existing tmux session')
         self._hosts = hosts
+        self._close_on_exit = close_on_exit
         self._session_name = internal.generate_session_name(host_list=self._hosts)
         self.__create_tmux_session()
         self.__create_split_panes()
@@ -19,10 +20,11 @@ class TmuxSession(object):
         self.__attach_session()
 
     def __del__(self):
-        with (Popen(f'tmux kill-session -t {self._session_name}', shell=True, stdout=PIPE) as tmux):
-            exit_code = tmux.wait()
-            if 0 != exit_code:
-                raise TmuxCommunicationError(f'Failed to close a new tmux session. The exit code was {exit_code}')
+        if self._close_on_exit:
+            with (Popen(f'tmux kill-session -t {self._session_name}', shell=True, stdout=PIPE) as tmux):
+                exit_code = tmux.wait()
+                if 0 != exit_code:
+                    raise TmuxCommunicationError(f'Failed to close a new tmux session. The exit code was {exit_code}')
 
     def __str__(self):
         return f'TmuxSession(session_name=\'{self._session_name}\')'
