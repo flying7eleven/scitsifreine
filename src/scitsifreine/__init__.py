@@ -1,4 +1,3 @@
-from math import ceil, floor
 from os import environ
 from subprocess import Popen, PIPE
 
@@ -33,10 +32,6 @@ class TmuxSession(object):
         return 'TMUX' in environ.keys()
 
     @staticmethod
-    def __calculate_split_panes(host_list: [str]) -> (int, int):
-        return ceil(len(host_list) / 2.) - 1, floor(len(host_list) / 2.)
-
-    @staticmethod
     def __execute_command(command: str):
         with Popen(command, shell=True, stdout=PIPE, stderr=PIPE) as exec_command:
             exit_code = exec_command.wait()
@@ -53,7 +48,7 @@ class TmuxSession(object):
 
     def __create_split_panes(self):
         v_splits = pane_idx = 0
-        vertical_splits_remaining, horizontal_splits_remaining = TmuxSession.__calculate_split_panes(self._hosts)
+        vertical_splits_remaining, horizontal_splits_remaining = internal.calculate_split_panes(self._hosts)
         while vertical_splits_remaining > 0 and v_splits < 2:
             TmuxSession.__execute_command('tmux split-window -v')
             vertical_splits_remaining -= 1
