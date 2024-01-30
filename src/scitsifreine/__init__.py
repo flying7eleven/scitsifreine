@@ -80,6 +80,8 @@ def main_cli() -> int:
     arg_parser.add_argument('-c', '--close-on-exit', action='store_true',
                             help='terminate the tmux session when its closed or move to the background (detached)')
     arg_parser.add_argument('--version', action='version', version=f'%(prog)s {version("scitsifreine")}')
+    arg_parser.add_argument('-l', '--ansible-host-lookup', action='store_true',
+                            help='if set, the supplied hosts will be interpreted as host group names and looked up in the ansible inventory defined in SCITSIFREINE_ANSIBLE_INVENTORY')
     args = arg_parser.parse_args()
     TmuxSession(hosts=args.hosts, close_on_exit=args.close_on_exit)
     return 0
