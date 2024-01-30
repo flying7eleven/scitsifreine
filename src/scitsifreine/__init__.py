@@ -71,7 +71,7 @@ class TmuxSession(object):
         TmuxSession.__execute_command(f'tmux attach-session -t {self._session_name}:0')
 
 
-def main_cli():
+def main_cli() -> int:
     arg_parser = ArgumentParser(prog='scitsi',
                                 description='helper script for creating multiple ssh sessions using tmux',
                                 epilog='see more details at: https://docs.tmux.org')
@@ -80,3 +80,4 @@ def main_cli():
                             help='terminate the tmux session when its closed or move to the background (detached)')
     args = arg_parser.parse_args()
     TmuxSession(hosts=args.hosts, close_on_exit=args.close_on_exit)
+    return 0
