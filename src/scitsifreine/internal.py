@@ -1,7 +1,6 @@
 from math import floor, ceil
 from ansible.inventory.manager import InventoryManager
 from ansible.parsing.dataloader import DataLoader
-from typing import Union
 
 
 def generate_session_name(host_list: [str], prefix='multissh'):
@@ -26,7 +25,7 @@ class AnsibleInventory(object):
     def is_group_known(self, group_name: str) -> bool:
         return self._im.get_groups_dict().get(group_name) is not None
 
-    def get_hosts(self, group_name: str) -> Union[list[str], None]:
+    def get_hosts(self, group_name: str) -> list[str] | None:
         if group_name in self._im.get_groups_dict().keys():
             return self._im.get_groups_dict()[group_name]
         else:
