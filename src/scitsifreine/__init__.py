@@ -1,3 +1,4 @@
+from argparse import ArgumentParser
 from os import environ
 from subprocess import Popen, PIPE
 
@@ -68,3 +69,14 @@ class TmuxSession(object):
 
     def __attach_session(self):
         TmuxSession.__execute_command(f'tmux attach-session -t {self._session_name}:0')
+
+
+def main_cli():
+    arg_parser = ArgumentParser(prog='scitsi',
+                                description='helper script for creating multiple ssh sessions using tmux',
+                                epilog='see more details at: https://docs.tmux.org')
+    arg_parser.add_argument('hosts', metavar='hosts', type=str, nargs='+', help='a list of hosts to connect to')
+    arg_parser.add_argument('-c', '--close-on-exit', action='store_true',
+                            help='terminate the tmux session when its closed or move to the background (detached)')
+    args = arg_parser.parse_args()
+    TmuxSession(hosts=args.hosts, close_on_exit=args.close_on_exit)
