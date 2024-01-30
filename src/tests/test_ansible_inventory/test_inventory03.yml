@@ -1,0 +1,8 @@
+some_name:
+  hosts:
+    host01.example.com:
+      service_ip: 192.168.1.1
+      weight: 50
+    host02.example.com:
+      service_ip: 192.168.2.1
+      weight: 50

@@ -27,7 +27,7 @@ def test_read_simple_ini_inventory(datadir):
     inventory_obj = AnsibleInventory(inventory_file)
     assert inventory_obj.is_group_known('some_name')
     assert not inventory_obj.is_group_known('some_name_invalid')
-    assert len(inventory_obj.get_hosts('some_name')) == 2
+    assert inventory_obj.get_hosts('some_name') == ['host01.example.com', 'host02.example.com']
     assert not inventory_obj.get_hosts('some_name_invalid')
 
 
@@ -37,5 +37,45 @@ def test_read_simple_yaml_inventory(datadir):
     inventory_obj = AnsibleInventory(inventory_file)
     assert inventory_obj.is_group_known('some_name')
     assert not inventory_obj.is_group_known('some_name_invalid')
-    assert len(inventory_obj.get_hosts('some_name')) == 2
+    assert inventory_obj.get_hosts('some_name') == ['host01.example.com', 'host02.example.com']
+    assert not inventory_obj.get_hosts('some_name_invalid')
+
+
+def test_read_ini_inventory_with_children(datadir):
+    from scitsifreine.internal import AnsibleInventory
+    inventory_file = datadir.join('test_inventory02.ini').strpath
+    inventory_obj = AnsibleInventory(inventory_file)
+    assert inventory_obj.is_group_known('some_name')
+    assert not inventory_obj.is_group_known('some_name_invalid')
+    assert inventory_obj.get_hosts('some_name') == ['host01.example.com', 'host02.example.com']
+    assert not inventory_obj.get_hosts('some_name_invalid')
+
+
+def test_read_yaml_inventory_with_children(datadir):
+    from scitsifreine.internal import AnsibleInventory
+    inventory_file = datadir.join('test_inventory02.yml').strpath
+    inventory_obj = AnsibleInventory(inventory_file)
+    assert inventory_obj.is_group_known('some_name')
+    assert not inventory_obj.is_group_known('some_name_invalid')
+    assert inventory_obj.get_hosts('some_name') == ['host01.example.com', 'host02.example.com']
+    assert not inventory_obj.get_hosts('some_name_invalid')
+
+
+def test_read_ini_inventory_with_additional_information(datadir):
+    from scitsifreine.internal import AnsibleInventory
+    inventory_file = datadir.join('test_inventory03.ini').strpath
+    inventory_obj = AnsibleInventory(inventory_file)
+    assert inventory_obj.is_group_known('some_name')
+    assert not inventory_obj.is_group_known('some_name_invalid')
+    assert inventory_obj.get_hosts('some_name') == ['host01.example.com', 'host02.example.com']
+    assert not inventory_obj.get_hosts('some_name_invalid')
+
+
+def test_read_yaml_inventory_with_additional_information(datadir):
+    from scitsifreine.internal import AnsibleInventory
+    inventory_file = datadir.join('test_inventory03.yml').strpath
+    inventory_obj = AnsibleInventory(inventory_file)
+    assert inventory_obj.is_group_known('some_name')
+    assert not inventory_obj.is_group_known('some_name_invalid')
+    assert inventory_obj.get_hosts('some_name') == ['host01.example.com', 'host02.example.com']
     assert not inventory_obj.get_hosts('some_name_invalid')

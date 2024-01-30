@@ -1,0 +1,7 @@
+sub_group:
+  hosts:
+    host01.example.com:
+    host02.example.com:
+some_name:
+  children:
+    sub_group:
