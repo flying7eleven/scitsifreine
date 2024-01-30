@@ -1,5 +1,7 @@
 from math import floor, ceil
-from toml import load as tomlload
+from ansible.inventory.manager import InventoryManager
+from ansible.parsing.dataloader import DataLoader
+from typing import Union
 
 
 def generate_session_name(host_list: [str], prefix='multissh'):
@@ -17,6 +19,15 @@ def calculate_split_panes(host_list: [str]) -> (int, int):
 
 
 class AnsibleInventory(object):
-    def __init__(self, inventory: str):
-        with open(inventory, 'r') as f:
-            self._inventory = tomlload(f)
+    def __init__(self, inventory_path: str):
+        self._dl = DataLoader()
+        self._im = InventoryManager(loader=self._dl, sources=inventory_path)
+
+    def is_group_known(self, group_name: str) -> bool:
+        return self._im.get_groups_dict().get(group_name) is not None
+
+    def get_hosts(self, group_name: str) -> Union[list[str], None]:
+        if group_name in self._im.get_groups_dict().keys():
+            return self._im.get_groups_dict()[group_name]
+        else:
+            return None
