@@ -2,5 +2,6 @@
 .venv/
 venv/
 dist/
+*.DS_Store
 *.pyc
 *.egg-info
