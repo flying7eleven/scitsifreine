@@ -37,3 +37,4 @@ Changelog = "https://github.com/flying7eleven/scitsifreine/blob/main/CHANGELOG.m
 
 [project.scripts]
 scitsi = "scitsifreine:main_cli"
+scitsifreine = "scitsifreine:main_cli"
