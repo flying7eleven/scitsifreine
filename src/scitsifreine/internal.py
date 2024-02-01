@@ -3,6 +3,8 @@ from ansible.inventory.manager import InventoryManager
 from ansible.parsing.dataloader import DataLoader
 from os import environ
 
+from scitsifreine.exceptions import NoInventoryFileSpecified
+
 
 def __convert_inventories_string_to_map(possible_inventories: str) -> [str]:
     if not possible_inventories or len(possible_inventories) == 0:
@@ -48,7 +50,7 @@ class AnsibleInventory(object):
             get_correct_ansible_inventory(environment)
         }
         if file_to_use is None:
-            raise Exception()
+            raise NoInventoryFileSpecified()
         self._dl = DataLoader()
         self._im = InventoryManager(loader=self._dl, sources=file_to_use)
 
