@@ -4,6 +4,7 @@ from subprocess import Popen, PIPE
 
 from scitsifreine import internal
 from scitsifreine.exceptions import InsideTmuxSession, TmuxCommunicationError
+from scitsifreine.internal import AnsibleInventory
 
 
 class TmuxSession(object):
@@ -21,7 +22,7 @@ class TmuxSession(object):
         self.__attach_session()
 
     def __del__(self):
-        if self._close_on_exit:
+        if hasattr(self, '_close_on_exit') and self._close_on_exit:
             with (Popen(f'tmux kill-session -t {self._session_name}', shell=True, stdout=PIPE) as tmux):
                 exit_code = tmux.wait()
                 if 0 != exit_code:
@@ -73,6 +74,8 @@ class TmuxSession(object):
 
 def main_cli() -> int:
     from importlib.metadata import version
+
+    # specify the arguments the user can pass
     arg_parser = ArgumentParser(prog='scitsi',
                                 description='helper script for creating multiple ssh sessions using tmux',
                                 epilog='see more details at: https://docs.tmux.org')
@@ -85,5 +88,17 @@ def main_cli() -> int:
                                  'Those will be used and looked up in the ansible inventory and look up the hosts of '
                                  'the host group for connecting')
     args = arg_parser.parse_args()
-    TmuxSession(hosts=args.hosts, close_on_exit=args.close_on_exit)
+    used_hosts = args.hosts
+
+    # if we are in ansible host group lookup, ensure that we have exactly two parameters provided
+    if args.ansible_host_lookup:
+        if len(args.hosts) != 2:
+            print('Please provide the environment and host group to use an ansible inventory for host grouo lookup')
+            return -1
+
+        # read the inventory and try to figure out which hosts are the ones in the provided host group
+        ansible_inventory = AnsibleInventory(environment=args.hosts[0])
+        used_hosts = ansible_inventory.get_hosts(args.hosts[1])
+
+    TmuxSession(hosts=used_hosts, close_on_exit=args.close_on_exit)
     return 0
