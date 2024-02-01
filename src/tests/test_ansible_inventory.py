@@ -79,3 +79,29 @@ def test_read_yaml_inventory_with_additional_information(datadir):
     assert not inventory_obj.is_group_known('some_name_invalid')
     assert inventory_obj.get_hosts('some_name') == ['host01.example.com', 'host02.example.com']
     assert not inventory_obj.get_hosts('some_name_invalid')
+
+
+def test_none_will_be_returned_if_env_is_not_defined():
+    from scitsifreine.internal import get_correct_ansible_inventory
+    inventory_file = get_correct_ansible_inventory('some_name')
+    assert not inventory_file
+
+
+def test_inventory_will_be_returned_if_not_associated_with_env():
+    from scitsifreine.internal import get_correct_ansible_inventory
+    from os import environ
+    environ['SCITSIFREINE_ANSIBLE_INVENTORIES'] = '/tmp/inventory'
+    inventory_file1 = get_correct_ansible_inventory('some_name')
+    inventory_file2 = get_correct_ansible_inventory('some_other_name')
+    assert inventory_file1 == '/tmp/inventory'
+    assert inventory_file2 == '/tmp/inventory'
+
+
+def test_correct_inventory_will_be_returned_if_multiple_environments_are_defined():
+    from scitsifreine.internal import get_correct_ansible_inventory
+    from os import environ
+    environ['SCITSIFREINE_ANSIBLE_INVENTORIES'] = 'live=/tmp/inventory1,production=/tmp/inventory2'
+    inventory_file1 = get_correct_ansible_inventory('live')
+    inventory_file2 = get_correct_ansible_inventory('not_defined')
+    assert inventory_file1 == '/tmp/inventory1'
+    assert not inventory_file2
