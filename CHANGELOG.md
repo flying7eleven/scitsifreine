@@ -15,6 +15,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Better error handling if some provided parameters were not correct
 
+## [0.1.1](https://github.com/flying7eleven/scitsifreine/releases/tag/0.1.1) - 2024-02-05
+
+### Added
+
+- The PyProject file does now contain the required dependencies
+
 ## [0.1.0](https://github.com/flying7eleven/scitsifreine/releases/tag/0.1.0) - 2024-02-01
 
 ### Added
