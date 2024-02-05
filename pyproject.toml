@@ -29,6 +29,10 @@ classifiers = [
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
 ]
+dependencies = [
+  'ansible~=9.1.0',
+  'pytest~=8.0.0',
+]
 
 [project.urls]
 Repository = "https://github.com/flying7eleven/scitsifreine.git"
