@@ -1,0 +1,15 @@
+[package]
+name = "scitsifreine"
+version = "0.2.0"
+edition = "2021"
+authors = ["Tim Janke <tim+github@janke.biz>"]
+repository = "https://github.com/flying7eleven/scitsifreine"
+description = "A simple tool for automatically creating a tmux window with ssh connection to all supplied hosts."
+keywords = ['ssh', 'tmux', 'multissh']
+categories = ['command-line-utilities']
+readme = "README.md"
+license = "MIT"
+rust-version = "1.60.0"
+
+
+[dependencies]
