@@ -9,11 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Documentation how to install the tool on your machine using pip and homebrew
+- Documentation how to install the tool on your machine using homebrew
 
-### Fixed
+### Changed
 
-- Better error handling if some provided parameters were not correct
+- Rewrote the Python code to Rust
 
 ## [0.1.1](https://github.com/flying7eleven/scitsifreine/releases/tag/0.1.1) - 2024-02-05
 
