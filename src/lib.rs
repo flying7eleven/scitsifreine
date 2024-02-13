@@ -47,6 +47,19 @@ impl<'a> Tmux<'a> {
         let vertical = (self.hosts.len() as f32 / 2.).floor();
         Ok(Splits::new(horizontal as u8, vertical as u8))
     }
+
+    /// Generate a valid session name based on the hosts we should connect to.
+    fn generate_session_name(self, prefix: &str) -> String {
+        let mut session_name = format!("{prefix}-");
+        if !self.hosts.is_empty() {
+            for current_host in self.hosts {
+                let host_part: Vec<&str> = current_host.split(".").collect();
+                session_name.push_str(host_part[0]);
+                session_name.push_str("-");
+            }
+        }
+        return session_name[..session_name.len() - 1].to_string();
+    }
 }
 
 #[cfg(test)]
@@ -158,5 +171,28 @@ mod tests {
             5
         );
         assert_eq!(maybe_split_result.as_ref().unwrap().vertical_split_count, 5);
+    }
+
+    #[test]
+    fn test_generate_session_name_with_empty_hosts() {
+        let session = Tmux::new(vec![], false);
+        let session_name = session.generate_session_name("multissh");
+
+        assert_eq!(session_name, "multissh");
+    }
+
+    #[test]
+    fn test_generate_session_name_with_fqdn_hosts() {
+        let session = Tmux::new(
+            vec![
+                "host1.example.com",
+                "host2.example.com",
+                "host3.example.com",
+            ],
+            false,
+        );
+        let session_name = session.generate_session_name("multissh");
+
+        assert_eq!(session_name, "multissh-host1-host2-host3");
     }
 }
