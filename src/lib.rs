@@ -1,3 +1,5 @@
+use std::process::Command;
+
 /// The number of required splits for the horizontal and vertical direction.
 #[derive(Debug)]
 struct Splits {
@@ -36,6 +38,14 @@ impl<'a> Tmux<'a> {
             hosts,
             close_on_exit,
         }
+    }
+
+    /// Check if the tmux command is available on the computer.
+    pub fn is_tmux_available() -> bool {
+        if let Ok(_process) = Command::new("tmux").arg("server-info").spawn() {
+            return true;
+        }
+        false
     }
 
     /// Calculates how many horizontal and vertical splits are required to represent all ssh connections.
