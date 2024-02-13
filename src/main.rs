@@ -29,7 +29,75 @@ enum ConnectionModes {
     },
 }
 
+/// TODO: this
+struct Splits {
+    horizontal_split_count: u8,
+    vertical_split_count: u8,
+}
+
+impl Splits {
+    pub fn new(horizontal_split_count: u8, vertical_split_count: u8) -> Splits {
+        Splits {
+            horizontal_split_count,
+            vertical_split_count,
+        }
+    }
+}
+
+/// The possible errors which can happen during creating and managing a tmux session.
+enum ScitsifreineErrors {
+    /// There were no hosts supplied directly on the command line or indirectly by an ansible inventory.
+    NoHosts,
+}
+
+/// The class for managing the tmux session.
+struct Tmux {
+    /// The hosts the instance currently manages.
+    hosts: Vec<String>,
+    /// Should be connections be closed on closing or detaching the tmux session?
+    close_on_exit: bool,
+}
+
+impl Tmux {
+    /// Create a new instance of this struct.
+    pub fn new(close_on_exit: bool) -> Tmux {
+        Tmux {
+            hosts: vec![],
+            close_on_exit,
+        }
+    }
+
+    /// Calculates how many horizontal and vertical splits are required to represent all ssh connections.
+    fn calculate_split_panes_for_hosts(self) -> Result<Splits, ScitsifreineErrors> {
+        if self.hosts.is_empty() {
+            return Err(ScitsifreineErrors::NoHosts);
+        }
+        let horizontal = (self.hosts.len() as f32 / 2.).ceil() - 1.;
+        let vertical = (self.hosts.len() as f32 / 2.).floor();
+        Ok(Splits::new(horizontal as u8, vertical as u8))
+    }
+}
+
+fn connection_mode_direct(close_on_exit: bool, _hosts: &[String]) {
+    let _tmux_connection = Tmux::new(close_on_exit);
+    unimplemented!("This connection mode is currently not implemented")
+}
+
+fn connection_mode_ansible(close_on_exit: bool, _environment: &str, _host_group: &str) {
+    let _tmux_connection = Tmux::new(close_on_exit);
+    unimplemented!("This connection mode is currently not implemented")
+}
+
 fn main() {
     // parse the supplied arguments
-    let _arguments = Args::parse();
+    let arguments = Args::parse();
+
+    // based on the supplied mode, call the correct entrypoint
+    match &arguments.connection_mode {
+        ConnectionModes::Ansible {
+            environment,
+            host_group,
+        } => connection_mode_ansible(arguments.close_on_exit, environment, host_group),
+        ConnectionModes::Direct { hosts } => connection_mode_direct(arguments.close_on_exit, hosts),
+    }
 }
