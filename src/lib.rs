@@ -63,9 +63,9 @@ impl<'a> Tmux<'a> {
         let mut session_name = format!("{prefix}-");
         if !self.hosts.is_empty() {
             for current_host in self.hosts {
-                let host_part: Vec<&str> = current_host.split(".").collect();
+                let host_part: Vec<&str> = current_host.split('.').collect();
                 session_name.push_str(host_part[0]);
-                session_name.push_str("-");
+                session_name.push('-');
             }
         }
         return session_name[..session_name.len() - 1].to_string();
