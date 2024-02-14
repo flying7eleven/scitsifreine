@@ -28,7 +28,7 @@ pub struct Tmux<'a> {
     /// The hosts the instance currently manages.
     hosts: Vec<&'a str>,
     /// Should be connections be closed on closing or detaching the tmux session?
-    close_on_exit: bool,
+    _close_on_exit: bool,
 }
 
 impl<'a> Tmux<'a> {
@@ -36,7 +36,7 @@ impl<'a> Tmux<'a> {
     pub fn new(hosts: Vec<&str>, close_on_exit: bool) -> Tmux {
         Tmux {
             hosts,
-            close_on_exit,
+            _close_on_exit: close_on_exit,
         }
     }
 

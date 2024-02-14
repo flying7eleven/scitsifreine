@@ -41,6 +41,12 @@ fn connection_mode_ansible(close_on_exit: bool, _environment: &str, _host_group:
 }
 
 fn main() {
+    // if tmux cannot be found, we can exit early
+    if !Tmux::is_tmux_available() {
+        println!("Cannot find tmux. Please install it before using scitsifreine.");
+        std::process::exit(1);
+    }
+
     // parse the supplied arguments
     let arguments = Args::parse();
 
