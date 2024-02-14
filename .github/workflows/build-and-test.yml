@@ -4,7 +4,7 @@ on:
   push:
     branches: [ "main", "refactor/rust" ]
   pull_request:
-    branches: [ "main", "refactor/rust" ]
+    branches: [ "main",  "refactor/rust" ]
 
 jobs:
   test:
@@ -30,3 +30,30 @@ jobs:
         with:
           components: rustfmt
       - uses: actions-rust-lang/rustfmt@v1
+
+  detect-tmux:
+    name: test tmux detection
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - run: |
+          set +e
+          sudo apt remove tmux
+          cargo run -- --help
+          if [ $? -eq 1 ]
+          then
+            exit 0
+          else
+            exit 1
+          fi
+      - run: |
+          set +e
+          sudo apt install tmux
+          cargo run -- --help
+          if [ $? -eq 0 ]
+          then
+            exit 0
+          else
+            exit 1
+          fi

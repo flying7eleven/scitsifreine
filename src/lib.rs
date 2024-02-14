@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use std::process::Command;
 
 /// The number of required splits for the horizontal and vertical direction.
@@ -68,7 +70,7 @@ impl<'a> Tmux<'a> {
                 session_name.push('-');
             }
         }
-        return session_name[..session_name.len() - 1].to_string();
+        session_name[..session_name.len() - 1].to_string()
     }
 }
 
