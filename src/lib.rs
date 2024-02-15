@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use std::process::Command;
 
 /// The number of required splits for the horizontal and vertical direction.
@@ -29,6 +27,8 @@ enum ScitsifreineErrors {
 pub struct Tmux<'a> {
     /// The hosts the instance currently manages.
     hosts: Vec<&'a str>,
+    /// The name of the session the class instance is managing.
+    session_name: String,
     /// Should be connections be closed on closing or detaching the tmux session?
     _close_on_exit: bool,
 }
@@ -38,20 +38,100 @@ impl<'a> Tmux<'a> {
     pub fn new(hosts: Vec<&str>, close_on_exit: bool) -> Tmux {
         Tmux {
             hosts,
+            session_name: "".to_string(),
             _close_on_exit: close_on_exit,
         }
     }
 
     /// Check if the tmux command is available on the computer.
     pub fn is_tmux_available() -> bool {
-        if let Ok(_process) = Command::new("tmux").arg("server-info").spawn() {
+        Tmux::execute_tmux_command(vec!["server-info"])
+    }
+
+    /// TODO
+    pub fn open(&self) {
+        self.generate_session_name("multissh");
+        self.create_tmux_session_and_window();
+        self.create_split_panes();
+        self.open_ssh_connections();
+        self.attach_session();
+    }
+
+    /// Execute any tmux command and return if the command succeeded or not.
+    fn execute_tmux_command(arguments: Vec<&str>) -> bool {
+        if let Ok(_process) = Command::new("tmux").args(arguments).spawn() {
             return true;
         }
         false
     }
 
+    /// TODO
+    fn create_tmux_session_and_window(&self) {
+        // create a new session names by the used server (TODO: better naming with a large server list)
+        Tmux::execute_tmux_command(vec!["new-session", "-d", "-s", self.session_name.as_str()]);
+
+        // rename the first window of the session to reflect the purpose
+        Tmux::execute_tmux_command(vec!["rename-window", "-t", "0", "ssh-sessions"]);
+    }
+
+    /// TODO
+    fn create_split_panes(&self) {
+        if let Ok(splits) = self.calculate_split_panes_for_hosts() {
+            let v_splits = 0;
+            let mut pane_idx = 0;
+            let mut vertical_splits_remaining = splits.vertical_split_count;
+            let mut horizontal_splits_remaining = splits.horizontal_split_count;
+
+            while vertical_splits_remaining > 0 && v_splits < 2 {
+                Tmux::execute_tmux_command(vec!["split-window", "-v"]);
+                vertical_splits_remaining -= 1;
+            }
+
+            while horizontal_splits_remaining > 0 {
+                Tmux::execute_tmux_command(vec![
+                    "select-pane",
+                    "-t",
+                    pane_idx.to_string().as_str(),
+                ]);
+                Tmux::execute_tmux_command(vec!["split-window", "-h"]);
+                pane_idx += 2;
+                horizontal_splits_remaining -= 1;
+            }
+        }
+        // TODO: handle error
+    }
+
+    /// TODO
+    fn open_ssh_connections(&self) {
+        let pane_idx = 0;
+        for current_host in &self.hosts {
+            Tmux::execute_tmux_command(vec![
+                "select-pane",
+                "-t",
+                pane_idx.to_string().as_str(),
+                "-T",
+                current_host,
+            ]);
+            Tmux::execute_tmux_command(vec![
+                "send-keys",
+                "-t",
+                pane_idx.to_string().as_str(),
+                format!("\"ssh {current_host}\"").as_str(),
+                "C-m",
+            ]);
+        }
+    }
+
+    fn attach_session(&self) {
+        Tmux::execute_tmux_command(vec![
+            "attach-session",
+            "-t",
+            format!("{0}:0", self.session_name).as_str(),
+        ]);
+    }
+
     /// Calculates how many horizontal and vertical splits are required to represent all ssh connections.
-    fn calculate_split_panes_for_hosts(self) -> Result<Splits, ScitsifreineErrors> {
+    fn calculate_split_panes_for_hosts(&self) -> Result<Splits, ScitsifreineErrors> {
         if self.hosts.is_empty() {
             return Err(ScitsifreineErrors::NoHosts);
         }
@@ -61,10 +141,10 @@ impl<'a> Tmux<'a> {
     }
 
     /// Generate a valid session name based on the hosts we should connect to.
-    fn generate_session_name(self, prefix: &str) -> String {
+    fn generate_session_name(&self, prefix: &str) -> String {
         let mut session_name = format!("{prefix}-");
         if !self.hosts.is_empty() {
-            for current_host in self.hosts {
+            for current_host in &self.hosts {
                 let host_part: Vec<&str> = current_host.split('.').collect();
                 session_name.push_str(host_part[0]);
                 session_name.push('-');

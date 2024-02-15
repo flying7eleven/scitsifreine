@@ -30,9 +30,9 @@ enum ConnectionModes {
     },
 }
 
-fn connection_mode_direct(close_on_exit: bool, _hosts: &[String]) {
-    let _tmux_connection = Tmux::new(vec![], close_on_exit);
-    unimplemented!("This connection mode is currently not implemented")
+fn connection_mode_direct(close_on_exit: bool, hosts: Vec<&str>) {
+    let tmux_connection = Tmux::new(hosts, close_on_exit);
+    tmux_connection.open();
 }
 
 fn connection_mode_ansible(close_on_exit: bool, _environment: &str, _host_group: &str) {
@@ -56,6 +56,9 @@ fn main() {
             environment,
             host_group,
         } => connection_mode_ansible(arguments.close_on_exit, environment, host_group),
-        ConnectionModes::Direct { hosts } => connection_mode_direct(arguments.close_on_exit, hosts),
+        ConnectionModes::Direct { hosts } => connection_mode_direct(
+            arguments.close_on_exit,
+            hosts.iter().map(|s| &**s).collect(),
+        ),
     }
 }
