@@ -1,3 +1,4 @@
+use log::error;
 use std::process::Command;
 
 /// The number of required splits for the horizontal and vertical direction.
@@ -65,53 +66,39 @@ impl<'a> Tmux<'a> {
         self.generate_session_name("multissh");
         if let Err(error) = self.create_tmux_session_and_window() {
             match error {
-                TmuxExecutionErrors::CreateSession => {
-                    println!("Could not create new tmux session")
-                }
-                TmuxExecutionErrors::RenameWindow => {
-                    println!("Could not create and rename a window in a tmux session")
-                }
-                _ => {
-                    println!("Unexpected error occurred while creating a new tmux session")
-                }
+                TmuxExecutionErrors::CreateSession => error!(
+                    "Could not create new tmux session with the session name {}",
+                    self.session_name
+                ),
+                TmuxExecutionErrors::RenameWindow => error!(
+                    "Could not create and rename a window in the tmux session with the name {}",
+                    self.session_name
+                ),
+                _ => error!("Unexpected error occurred while creating a new tmux session"),
             }
             return false;
         }
         if let Err(error) = self.create_split_panes() {
             match error {
-                TmuxExecutionErrors::VerticalSplit => {
-                    println!("Could not create a vertical split in a tmux session")
-                }
-                TmuxExecutionErrors::HorizontalSplit => {
-                    println!("Could not create a horizontal split in a tmux session")
-                }
-                TmuxExecutionErrors::SelectPane => {
-                    println!("Could not select a pane in a tmux session")
-                }
-                TmuxExecutionErrors::CalculateSplittingForHosts => {
-                    println!("Could not calculate the required splittings for the list of supplied hosts")
-                }
-                _ => {
-                    println!(
-                        "Unexpected error occurred while creating the required panes for the hosts"
-                    )
-                }
+                TmuxExecutionErrors::VerticalSplit => error!("Could not create a vertical split in the tmux session {}", self.session_name),
+                TmuxExecutionErrors::HorizontalSplit => error!("Could not create a horizontal split in the tmux session {}", self.session_name),
+                TmuxExecutionErrors::SelectPane => error!("Could not select a pane in the tmux session {}", self.session_name),
+                TmuxExecutionErrors::CalculateSplittingForHosts => println!("Could not calculate the required splittings for the list of supplied {} hosts", self.hosts.len()),
+                _ =>  error!("Unexpected error occurred while creating the required panes for the ssh connection to all hosts")
             }
             return false;
         }
         if let Err(error) = self.open_ssh_connections() {
             match error {
-                TmuxExecutionErrors::SelectPane => {
-                    println!("Failed to select a pane of a tmux session")
-                }
-                TmuxExecutionErrors::SendKeysToSession => {
-                    println!("Failed to send keys to a pane of a tmux session")
-                }
-                _ => {
-                    println!(
-                        "Unexpected error occurred while creating the required panes for the hosts"
-                    )
-                }
+                TmuxExecutionErrors::SelectPane => error!(
+                    "Failed to select a pane of the tmux session {}",
+                    self.session_name
+                ),
+                TmuxExecutionErrors::SendKeysToSession => error!(
+                    "Failed to send keys to a pane of the tmux session {}",
+                    self.session_name
+                ),
+                _ => error!("Unexpected error occurred while opening the ssh connection to a host"),
             }
             return false;
         }
