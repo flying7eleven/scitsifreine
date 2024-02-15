@@ -23,6 +23,18 @@ enum ScitsifreineErrors {
     NoHosts,
 }
 
+// TODO: this
+#[derive(Eq, PartialEq, Debug)]
+enum TmuxExecutionErrors {
+    CreateSession,
+    RenameWindow,
+    VerticalSplit,
+    HorizontalSplit,
+    SelectPane,
+    CalculateSplittingForHosts,
+    SendKeysToSession,
+}
+
 /// The class for managing the tmux session.
 pub struct Tmux<'a> {
     /// The hosts the instance currently manages.
@@ -49,12 +61,62 @@ impl<'a> Tmux<'a> {
     }
 
     /// TODO
-    pub fn open(&self) {
+    pub fn open(&self) -> bool {
         self.generate_session_name("multissh");
-        self.create_tmux_session_and_window();
-        self.create_split_panes();
-        self.open_ssh_connections();
+        if let Err(error) = self.create_tmux_session_and_window() {
+            match error {
+                TmuxExecutionErrors::CreateSession => {
+                    println!("Could not create new tmux session")
+                }
+                TmuxExecutionErrors::RenameWindow => {
+                    println!("Could not create and rename a window in a tmux session")
+                }
+                _ => {
+                    println!("Unexpected error occurred while creating a new tmux session")
+                }
+            }
+            return false;
+        }
+        if let Err(error) = self.create_split_panes() {
+            match error {
+                TmuxExecutionErrors::VerticalSplit => {
+                    println!("Could not create a vertical split in a tmux session")
+                }
+                TmuxExecutionErrors::HorizontalSplit => {
+                    println!("Could not create a horizontal split in a tmux session")
+                }
+                TmuxExecutionErrors::SelectPane => {
+                    println!("Could not select a pane in a tmux session")
+                }
+                TmuxExecutionErrors::CalculateSplittingForHosts => {
+                    println!("Could not calculate the required splittings for the list of supplied hosts")
+                }
+                _ => {
+                    println!(
+                        "Unexpected error occurred while creating the required panes for the hosts"
+                    )
+                }
+            }
+            return false;
+        }
+        if let Err(error) = self.open_ssh_connections() {
+            match error {
+                TmuxExecutionErrors::SelectPane => {
+                    println!("Failed to select a pane of a tmux session")
+                }
+                TmuxExecutionErrors::SendKeysToSession => {
+                    println!("Failed to send keys to a pane of a tmux session")
+                }
+                _ => {
+                    println!(
+                        "Unexpected error occurred while creating the required panes for the hosts"
+                    )
+                }
+            }
+            return false;
+        }
         self.attach_session();
+        true
     }
 
     /// Execute any tmux command and return if the command succeeded or not.
@@ -66,16 +128,24 @@ impl<'a> Tmux<'a> {
     }
 
     /// TODO
-    fn create_tmux_session_and_window(&self) {
+    fn create_tmux_session_and_window(&self) -> Result<(), TmuxExecutionErrors> {
         // create a new session names by the used server (TODO: better naming with a large server list)
-        Tmux::execute_tmux_command(vec!["new-session", "-d", "-s", self.session_name.as_str()]);
+        if !Tmux::execute_tmux_command(vec!["new-session", "-d", "-s", self.session_name.as_str()])
+        {
+            return Err(TmuxExecutionErrors::CreateSession);
+        }
 
         // rename the first window of the session to reflect the purpose
-        Tmux::execute_tmux_command(vec!["rename-window", "-t", "0", "ssh-sessions"]);
+        if !Tmux::execute_tmux_command(vec!["rename-window", "-t", "0", "ssh-sessions"]) {
+            return Err(TmuxExecutionErrors::RenameWindow);
+        }
+
+        // it seems that everything was okay
+        Ok(())
     }
 
     /// TODO
-    fn create_split_panes(&self) {
+    fn create_split_panes(&self) -> Result<(), TmuxExecutionErrors> {
         if let Ok(splits) = self.calculate_split_panes_for_hosts() {
             let v_splits = 0;
             let mut pane_idx = 0;
@@ -83,43 +153,56 @@ impl<'a> Tmux<'a> {
             let mut horizontal_splits_remaining = splits.horizontal_split_count;
 
             while vertical_splits_remaining > 0 && v_splits < 2 {
-                Tmux::execute_tmux_command(vec!["split-window", "-v"]);
+                if !Tmux::execute_tmux_command(vec!["split-window", "-v"]) {
+                    return Err(TmuxExecutionErrors::VerticalSplit);
+                }
                 vertical_splits_remaining -= 1;
             }
 
             while horizontal_splits_remaining > 0 {
-                Tmux::execute_tmux_command(vec![
+                if !Tmux::execute_tmux_command(vec![
                     "select-pane",
                     "-t",
                     pane_idx.to_string().as_str(),
-                ]);
-                Tmux::execute_tmux_command(vec!["split-window", "-h"]);
+                ]) {
+                    return Err(TmuxExecutionErrors::SelectPane);
+                }
+                if !Tmux::execute_tmux_command(vec!["split-window", "-h"]) {
+                    return Err(TmuxExecutionErrors::HorizontalSplit);
+                }
                 pane_idx += 2;
                 horizontal_splits_remaining -= 1;
             }
+
+            return Ok(());
         }
-        // TODO: handle error
+        Err(TmuxExecutionErrors::CalculateSplittingForHosts)
     }
 
     /// TODO
-    fn open_ssh_connections(&self) {
+    fn open_ssh_connections(&self) -> Result<(), TmuxExecutionErrors> {
         let pane_idx = 0;
         for current_host in &self.hosts {
-            Tmux::execute_tmux_command(vec![
+            if !Tmux::execute_tmux_command(vec![
                 "select-pane",
                 "-t",
                 pane_idx.to_string().as_str(),
                 "-T",
                 current_host,
-            ]);
-            Tmux::execute_tmux_command(vec![
+            ]) {
+                return Err(TmuxExecutionErrors::SelectPane);
+            }
+            if !Tmux::execute_tmux_command(vec![
                 "send-keys",
                 "-t",
                 pane_idx.to_string().as_str(),
                 format!("\"ssh {current_host}\"").as_str(),
                 "C-m",
-            ]);
+            ]) {
+                return Err(TmuxExecutionErrors::SendKeysToSession);
+            }
         }
+        Ok(())
     }
 
     fn attach_session(&self) {
