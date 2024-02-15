@@ -1,5 +1,7 @@
 use clap::{Parser, Subcommand};
+use log::{info, LevelFilter};
 use scitsifreine::Tmux;
+use std::fs::OpenOptions;
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -10,6 +12,9 @@ struct Args {
     /// Close the ssh connection if the tmux session gets closed or detached.
     #[arg(short, long, default_value_t = false)]
     close_on_exit: bool,
+    /// Log everything to a logfile in the same directory the program is executed in.
+    #[arg(short, long, default_value_t = false)]
+    logging: bool,
 }
 
 #[derive(Subcommand)]
@@ -28,6 +33,46 @@ enum ConnectionModes {
         #[arg(required = true, num_args = 2..)]
         hosts: Vec<String>,
     },
+}
+
+fn setup_logging() {
+    use chrono::Utc;
+
+    // create an instance for the Dispatcher to create a new logging configuration
+    let mut base_config = fern::Dispatch::new();
+
+    // set the corresponding logging level
+    base_config = base_config.level(LevelFilter::Info);
+
+    // create the logfile we want to use for logging
+    let maybe_logfile = OpenOptions::new()
+        .write(true)
+        .create(true)
+        .truncate(true)
+        .append(false)
+        .open("scitsifreine.log");
+    if maybe_logfile.is_err() {
+        panic!("Could not create logfile. Don't know how to recover from that.");
+    }
+
+    // define how a logging line should look like and attach the streams to which the output will be
+    // written to
+    let file_config = fern::Dispatch::new()
+        .format(|out, message, record| {
+            out.finish(format_args!(
+                "{}[{}] {}",
+                Utc::now().format("[%H:%M:%S]"),
+                record.level(),
+                message
+            ))
+        })
+        .chain(maybe_logfile.unwrap());
+
+    // now chain everything together and get ready for actually logging stuff
+    base_config.chain(file_config).apply().unwrap();
+
+    // just to be sure the logging works, write a small info message into the logfile
+    info!("Logging enabled");
 }
 
 fn connection_mode_direct(close_on_exit: bool, hosts: Vec<&str>) {
@@ -49,6 +94,11 @@ fn main() {
 
     // parse the supplied arguments
     let arguments = Args::parse();
+
+    // if logging should be enabled, do it now
+    if arguments.logging {
+        setup_logging();
+    }
 
     // based on the supplied mode, call the correct entrypoint
     match &arguments.connection_mode {
