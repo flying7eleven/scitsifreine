@@ -15,6 +15,11 @@ rust-version = "1.60.0"
 default = ["ansible-inventories"]
 ansible-inventories = ["dep:rust-ini"]
 
+[dependencies.ascii_table]
+version = "4.0.3"
+default-features = false
+features = ["auto_table_width"]
+
 [dependencies.chrono]
 version = "0.4.34"
 default-features = false
