@@ -1,4 +1,4 @@
-use log::{debug, error};
+use log::{debug, error, trace};
 use std::process::Command;
 
 /// The number of required splits for the horizontal and vertical direction.
@@ -113,10 +113,22 @@ impl<'a> Tmux<'a> {
 
     /// Execute any tmux command and return if the command succeeded or not.
     fn execute_tmux_command(arguments: Vec<&str>) -> bool {
-        if let Ok(_process) = Command::new("tmux").args(arguments).spawn() {
-            return true;
+        let mut cmd = Command::new("tmux");
+        cmd.args(arguments.clone());
+
+        match cmd.status() {
+            Ok(exit_code) => {
+                if exit_code.success() {
+                    return true;
+                }
+                trace!("Tmux process exited with the exit code {} was called with the following arguments: {}", exit_code.code().unwrap_or(-1), arguments.join(","));
+                false
+            }
+            Err(error) => {
+                error!("{}", error);
+                false
+            }
         }
-        false
     }
 
     /// TODO

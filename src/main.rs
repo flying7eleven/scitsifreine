@@ -23,6 +23,9 @@ struct Args {
     /// Log everything to a logfile in the same directory the program is executed in.
     #[arg(short, long, default_value_t = false)]
     logging: bool,
+    /// Log all calls down to the trace category (requires to also set the flag for logging).
+    #[arg(short, long, default_value_t = false, requires = "logging")]
+    trace_logging: bool,
 }
 
 #[derive(Subcommand)]
@@ -45,24 +48,30 @@ enum ConnectionModes {
 
 #[cfg(debug_assertions)]
 #[inline(always)]
-fn logging_level() -> LevelFilter {
+fn logging_level(trace_logging: bool) -> LevelFilter {
+    if trace_logging {
+        return LevelFilter::Trace;
+    }
     LevelFilter::Debug
 }
 
 #[cfg(not(debug_assertions))]
 #[inline(always)]
-fn logging_level() -> LevelFilter {
+fn logging_level(trace_logging: bool) -> LevelFilter {
+    if trace_logging {
+        return LevelFilter::Trace;
+    }
     LevelFilter::Info
 }
 
-fn setup_logging() {
+fn setup_logging(trace_logging: bool) {
     use chrono::Utc;
 
     // create an instance for the Dispatcher to create a new logging configuration
     let mut base_config = fern::Dispatch::new();
 
     // set the corresponding logging level
-    base_config = base_config.level(logging_level());
+    base_config = base_config.level(logging_level(trace_logging));
 
     // create the logfile we want to use for logging
     let maybe_logfile = OpenOptions::new()
@@ -115,18 +124,18 @@ fn connection_mode_ansible(
 }
 
 fn main() {
-    // if tmux cannot be found, we can exit early
-    if !Tmux::is_tmux_available() {
-        println!("Cannot find tmux. Please install it before using scitsifreine.");
-        std::process::exit(1);
-    }
-
     // parse the supplied arguments
     let arguments = Args::parse();
 
     // if logging should be enabled, do it now
     if arguments.logging {
-        setup_logging();
+        setup_logging(arguments.trace_logging);
+    }
+
+    // if tmux cannot be found, we can exit early
+    if !Tmux::is_tmux_available() {
+        println!("Cannot find tmux. Please install it before using scitsifreine.");
+        std::process::exit(1);
     }
 
     // based on the supplied mode, call the correct entrypoint
