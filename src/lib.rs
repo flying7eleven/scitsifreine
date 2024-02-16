@@ -197,7 +197,7 @@ impl<'a> Tmux<'a> {
                 "send-keys",
                 "-t",
                 pane_idx.to_string().as_str(),
-                format!("\"ssh {current_host}\"").as_str(),
+                format!("ssh {current_host}").as_str(),
                 "C-m",
             ]) {
                 return Err(TmuxExecutionErrors::SendKeysToSession);
