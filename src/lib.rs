@@ -44,15 +44,18 @@ pub struct Tmux<'a> {
     session_name: String,
     /// Should be connections be closed on closing or detaching the tmux session?
     _close_on_exit: bool,
+    /// Should the shell automatically be attached to the new tmux session after it was created?
+    auto_attach: bool,
 }
 
 impl<'a> Tmux<'a> {
     /// Create a new instance of this struct.
-    pub fn new(hosts: Vec<&str>, close_on_exit: bool) -> Tmux {
+    pub fn new(hosts: Vec<&str>, close_on_exit: bool, auto_attach: bool) -> Tmux {
         Tmux {
             hosts,
             session_name: "".to_string(),
             _close_on_exit: close_on_exit,
+            auto_attach,
         }
     }
 
@@ -102,7 +105,9 @@ impl<'a> Tmux<'a> {
             }
             return false;
         }
-        self.attach_session();
+        if self.auto_attach {
+            self.attach_session();
+        }
         true
     }
 
@@ -253,7 +258,7 @@ mod tests {
 
     #[test]
     fn test_number_of_splits_for_no_hosts() {
-        let session = Tmux::new(vec![], false);
+        let session = Tmux::new(vec![], false, false);
         let maybe_split_result = session.calculate_split_panes_for_hosts();
 
         assert_eq!(maybe_split_result.is_err(), true);
@@ -265,7 +270,7 @@ mod tests {
 
     #[test]
     fn test_number_of_splits_for_one_hosts() {
-        let session = Tmux::new(vec!["first"], false);
+        let session = Tmux::new(vec!["first"], false, false);
         let maybe_split_result = session.calculate_split_panes_for_hosts();
 
         assert_eq!(maybe_split_result.is_err(), false);
@@ -278,7 +283,7 @@ mod tests {
 
     #[test]
     fn test_number_of_splits_for_two_hosts() {
-        let session = Tmux::new(vec!["first", "second"], false);
+        let session = Tmux::new(vec!["first", "second"], false, false);
         let maybe_split_result = session.calculate_split_panes_for_hosts();
 
         assert_eq!(maybe_split_result.is_err(), false);
@@ -291,7 +296,7 @@ mod tests {
 
     #[test]
     fn test_number_of_splits_for_three_hosts() {
-        let session = Tmux::new(vec!["first", "second", "third"], false);
+        let session = Tmux::new(vec!["first", "second", "third"], false, false);
         let maybe_split_result = session.calculate_split_panes_for_hosts();
 
         assert_eq!(maybe_split_result.is_err(), false);
@@ -308,6 +313,7 @@ mod tests {
             vec![
                 "first", "second", "third", "fourth", "fifth", "sixth", "seventh",
             ],
+            false,
             false,
         );
         let maybe_split_result = session.calculate_split_panes_for_hosts();
@@ -328,6 +334,7 @@ mod tests {
                 "ninth", "tenth",
             ],
             false,
+            false,
         );
         let maybe_split_result = session.calculate_split_panes_for_hosts();
 
@@ -347,6 +354,7 @@ mod tests {
                 "ninth", "tenth", "eleventh",
             ],
             false,
+            false,
         );
         let maybe_split_result = session.calculate_split_panes_for_hosts();
 
@@ -360,7 +368,7 @@ mod tests {
 
     #[test]
     fn test_generate_session_name_with_empty_hosts() {
-        let session = Tmux::new(vec![], false);
+        let session = Tmux::new(vec![], false, false);
         let session_name = session.generate_session_name("multissh");
 
         assert_eq!(session_name, "multissh");
@@ -374,6 +382,7 @@ mod tests {
                 "host2.example.com",
                 "host3.example.com",
             ],
+            false,
             false,
         );
         let session_name = session.generate_session_name("multissh");

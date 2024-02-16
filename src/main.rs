@@ -9,8 +9,16 @@ struct Args {
     /// The algorithm which should be used for hashing.
     #[clap(subcommand)]
     connection_mode: ConnectionModes,
+    /// If the flag is used, the tmux connection will not be automatically attached to the screen.
+    #[arg(short, long, default_value_t = false, conflicts_with = "close_on_exit")]
+    no_auto_attach: bool,
     /// Close the ssh connection if the tmux session gets closed or detached.
-    #[arg(short, long, default_value_t = false)]
+    #[arg(
+        short,
+        long,
+        default_value_t = false,
+        conflicts_with = "no_auto_attach"
+    )]
     close_on_exit: bool,
     /// Log everything to a logfile in the same directory the program is executed in.
     #[arg(short, long, default_value_t = false)]
@@ -84,16 +92,21 @@ fn setup_logging() {
     base_config.chain(file_config).apply().unwrap();
 }
 
-fn connection_mode_direct(close_on_exit: bool, hosts: Vec<&str>) {
+fn connection_mode_direct(close_on_exit: bool, auto_attach: bool, hosts: Vec<&str>) {
     debug!(
         "Using direct connection mode to connect to {} hosts",
         hosts.len()
     );
-    let tmux_connection = Tmux::new(hosts, close_on_exit);
+    let tmux_connection = Tmux::new(hosts, close_on_exit, auto_attach);
     tmux_connection.open();
 }
 
-fn connection_mode_ansible(_close_on_exit: bool, environment: &str, host_group: &str) {
+fn connection_mode_ansible(
+    _close_on_exit: bool,
+    _auto_attach: bool,
+    environment: &str,
+    host_group: &str,
+) {
     debug!(
         "Using ansible-inventory connection mode for environment {} and host group {}",
         environment, host_group
@@ -121,9 +134,15 @@ fn main() {
         ConnectionModes::Ansible {
             environment,
             host_group,
-        } => connection_mode_ansible(arguments.close_on_exit, environment, host_group),
+        } => connection_mode_ansible(
+            arguments.close_on_exit,
+            !arguments.no_auto_attach,
+            environment,
+            host_group,
+        ),
         ConnectionModes::Direct { hosts } => connection_mode_direct(
             arguments.close_on_exit,
+            !arguments.no_auto_attach,
             hosts.iter().map(|s| &**s).collect(),
         ),
     }
