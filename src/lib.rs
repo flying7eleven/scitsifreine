@@ -179,8 +179,7 @@ impl<'a> Tmux<'a> {
 
     /// TODO
     fn open_ssh_connections(&self) -> Result<(), TmuxExecutionErrors> {
-        let pane_idx = 0;
-        for current_host in &self.hosts {
+        for (pane_idx, current_host) in self.hosts.iter().enumerate() {
             debug!(
                 "Opening ssh connection to {} in pane {}",
                 current_host, pane_idx
