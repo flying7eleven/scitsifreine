@@ -1,5 +1,5 @@
 use clap::{Parser, Subcommand};
-use log::{info, LevelFilter};
+use log::{debug, LevelFilter};
 use scitsifreine::Tmux;
 use std::fs::OpenOptions;
 
@@ -35,6 +35,18 @@ enum ConnectionModes {
     },
 }
 
+#[cfg(debug_assertions)]
+#[inline(always)]
+fn logging_level() -> LevelFilter {
+    LevelFilter::Debug
+}
+
+#[cfg(not(debug_assertions))]
+#[inline(always)]
+fn logging_level() -> LevelFilter {
+    LevelFilter::Info
+}
+
 fn setup_logging() {
     use chrono::Utc;
 
@@ -42,7 +54,7 @@ fn setup_logging() {
     let mut base_config = fern::Dispatch::new();
 
     // set the corresponding logging level
-    base_config = base_config.level(LevelFilter::Info);
+    base_config = base_config.level(logging_level());
 
     // create the logfile we want to use for logging
     let maybe_logfile = OpenOptions::new()
@@ -70,18 +82,22 @@ fn setup_logging() {
 
     // now chain everything together and get ready for actually logging stuff
     base_config.chain(file_config).apply().unwrap();
-
-    // just to be sure the logging works, write a small info message into the logfile
-    info!("Logging enabled");
 }
 
 fn connection_mode_direct(close_on_exit: bool, hosts: Vec<&str>) {
+    debug!(
+        "Using direct connection mode to connect to {} hosts",
+        hosts.len()
+    );
     let tmux_connection = Tmux::new(hosts, close_on_exit);
     tmux_connection.open();
 }
 
-fn connection_mode_ansible(close_on_exit: bool, _environment: &str, _host_group: &str) {
-    let _tmux_connection = Tmux::new(vec![], close_on_exit);
+fn connection_mode_ansible(_close_on_exit: bool, environment: &str, host_group: &str) {
+    debug!(
+        "Using ansible-inventory connection mode for environment {} and host group {}",
+        environment, host_group
+    );
     unimplemented!("This connection mode is currently not implemented")
 }
 
