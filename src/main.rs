@@ -4,7 +4,7 @@ use log::{debug, LevelFilter};
 use scitsifreine::Tmux;
 use std::fmt::Display;
 use std::fs::OpenOptions;
-use std::process::Command as ProcessCommand;
+use std::process::{Command as ProcessCommand, Stdio};
 use std::str;
 
 /// TODO
@@ -119,12 +119,16 @@ fn setup_logging(trace_logging: bool) {
 fn determine_ssh_executable_and_version() -> ApplicationTuple {
     let mut cmd = ProcessCommand::new("which");
     cmd.arg("ssh");
+    cmd.stderr(Stdio::piped());
+    cmd.stdout(Stdio::piped());
     if let Ok(status) = cmd.status() {
         if status.success() {
             let ssh_path = String::from_utf8_lossy(cmd.output().unwrap().stdout.as_ref())
                 .trim()
                 .to_string();
             cmd = ProcessCommand::new("ssh");
+            cmd.stderr(Stdio::piped());
+            cmd.stdout(Stdio::piped());
             cmd.arg("-V");
             if let Ok(status) = cmd.status() {
                 if status.success() {
@@ -152,6 +156,8 @@ fn determine_ssh_executable_and_version() -> ApplicationTuple {
 
 fn determine_tmux_executable_and_version() -> ApplicationTuple {
     let mut cmd = ProcessCommand::new("which");
+    cmd.stderr(Stdio::piped());
+    cmd.stdout(Stdio::piped());
     cmd.arg("tmux");
     if let Ok(status) = cmd.status() {
         if status.success() {
@@ -159,6 +165,8 @@ fn determine_tmux_executable_and_version() -> ApplicationTuple {
                 .trim()
                 .to_string();
             cmd = ProcessCommand::new("tmux");
+            cmd.stderr(Stdio::piped());
+            cmd.stdout(Stdio::piped());
             cmd.arg("-V");
             if let Ok(status) = cmd.status() {
                 if status.success() {
