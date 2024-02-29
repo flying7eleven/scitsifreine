@@ -7,11 +7,12 @@ use std::fs::OpenOptions;
 use std::process::{Command as ProcessCommand, Stdio};
 use std::str;
 
-/// TODO
+/// A struct for combining information about the path of an executable
+/// with the corresponding version information of that tool.
 struct ApplicationTuple {
-    /// TODO
+    /// The path to the binary for which the information are provided for.
     binary: Option<String>,
-    /// TODO
+    /// The version information for the given binary.
     version: Option<String>,
 }
 
@@ -116,76 +117,45 @@ fn setup_logging(trace_logging: bool) {
     base_config.chain(file_config).apply().unwrap();
 }
 
-fn determine_ssh_executable_and_version() -> ApplicationTuple {
+fn get_application_information(command: &str, version_flag: &str) -> ApplicationTuple {
     let mut cmd = ProcessCommand::new("which");
-    cmd.arg("ssh");
-    cmd.stderr(Stdio::piped());
-    cmd.stdout(Stdio::piped());
+    cmd.arg(command)
+        .stderr(Stdio::piped())
+        .stdout(Stdio::piped());
     if let Ok(status) = cmd.status() {
         if status.success() {
-            let ssh_path = String::from_utf8_lossy(cmd.output().unwrap().stdout.as_ref())
+            let binary_path = String::from_utf8_lossy(cmd.output().unwrap().stdout.as_ref())
                 .trim()
                 .to_string();
-            cmd = ProcessCommand::new("ssh");
-            cmd.stderr(Stdio::piped());
-            cmd.stdout(Stdio::piped());
-            cmd.arg("-V");
+            cmd = ProcessCommand::new(command);
+            cmd.arg(version_flag)
+                .stderr(Stdio::piped())
+                .stdout(Stdio::piped());
             if let Ok(status) = cmd.status() {
                 if status.success() {
-                    let ssh_version =
-                        String::from_utf8_lossy(cmd.output().unwrap().stderr.as_ref())
-                            .trim()
-                            .to_string();
-                    return ApplicationTuple {
-                        binary: Some(ssh_path),
-                        version: Some(ssh_version),
-                    };
-                }
-            }
-            return ApplicationTuple {
-                binary: Some(ssh_path),
-                version: None,
-            };
-        }
-    }
-    ApplicationTuple {
-        binary: None,
-        version: None,
-    }
-}
-
-fn determine_tmux_executable_and_version() -> ApplicationTuple {
-    let mut cmd = ProcessCommand::new("which");
-    cmd.stderr(Stdio::piped());
-    cmd.stdout(Stdio::piped());
-    cmd.arg("tmux");
-    if let Ok(status) = cmd.status() {
-        if status.success() {
-            let tmux_path = String::from_utf8_lossy(cmd.output().unwrap().stdout.as_ref())
-                .trim()
-                .to_string();
-            cmd = ProcessCommand::new("tmux");
-            cmd.stderr(Stdio::piped());
-            cmd.stdout(Stdio::piped());
-            cmd.arg("-V");
-            if let Ok(status) = cmd.status() {
-                if status.success() {
-                    let tmux_version =
+                    let stdout_output =
                         String::from_utf8_lossy(cmd.output().unwrap().stdout.as_ref())
-                            .to_string()
-                            .split(' ')
-                            .last()
-                            .unwrap_or("")
                             .trim()
                             .to_string();
-                    return ApplicationTuple {
-                        binary: Some(tmux_path),
-                        version: Some(tmux_version),
+                    return if !stdout_output.is_empty() {
+                        ApplicationTuple {
+                            binary: Some(binary_path),
+                            version: Some(stdout_output),
+                        }
+                    } else {
+                        let stderr_output =
+                            String::from_utf8_lossy(cmd.output().unwrap().stderr.as_ref())
+                                .trim()
+                                .to_string();
+                        ApplicationTuple {
+                            binary: Some(binary_path),
+                            version: Some(stderr_output),
+                        }
                     };
                 }
             }
             return ApplicationTuple {
-                binary: Some(tmux_path),
+                binary: Some(binary_path),
                 version: None,
             };
         }
@@ -233,10 +203,10 @@ fn show_information() {
         .set_header("Version")
         .set_align(Align::Left);
 
-    let tmux_infos = determine_tmux_executable_and_version();
+    let tmux_infos = get_application_information("tmux", "-V");
     let tmux_binary = tmux_infos.binary.unwrap_or("N/A".to_string());
     let tmux_version = tmux_infos.version.unwrap_or("N/A".to_string());
-    let ssh_infos = determine_ssh_executable_and_version();
+    let ssh_infos = get_application_information("ssh", "-V");
     let ssh_binary = ssh_infos.binary.unwrap_or("N/A".to_string());
     let ssh_version = ssh_infos.version.unwrap_or("N/A".to_string());
     let data: Vec<Vec<&dyn Display>> = vec![
