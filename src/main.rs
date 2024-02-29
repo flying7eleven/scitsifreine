@@ -7,6 +7,14 @@ use std::fs::OpenOptions;
 use std::process::Command as ProcessCommand;
 use std::str;
 
+/// TODO
+struct ApplicationTuple {
+    /// TODO
+    binary: Option<String>,
+    /// TODO
+    version: Option<String>,
+}
+
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
 struct Args {
@@ -108,15 +116,76 @@ fn setup_logging(trace_logging: bool) {
     base_config.chain(file_config).apply().unwrap();
 }
 
-fn determine_tmux_executable() -> String {
+fn determine_ssh_executable_and_version() -> ApplicationTuple {
+    let mut cmd = ProcessCommand::new("which");
+    cmd.arg("ssh");
+    if let Ok(status) = cmd.status() {
+        if status.success() {
+            let ssh_path = String::from_utf8_lossy(cmd.output().unwrap().stdout.as_ref())
+                .trim()
+                .to_string();
+            cmd = ProcessCommand::new("ssh");
+            cmd.arg("-V");
+            if let Ok(status) = cmd.status() {
+                if status.success() {
+                    let ssh_version =
+                        String::from_utf8_lossy(cmd.output().unwrap().stderr.as_ref())
+                            .trim()
+                            .to_string();
+                    return ApplicationTuple {
+                        binary: Some(ssh_path),
+                        version: Some(ssh_version),
+                    };
+                }
+            }
+            return ApplicationTuple {
+                binary: Some(ssh_path),
+                version: None,
+            };
+        }
+    }
+    ApplicationTuple {
+        binary: None,
+        version: None,
+    }
+}
+
+fn determine_tmux_executable_and_version() -> ApplicationTuple {
     let mut cmd = ProcessCommand::new("which");
     cmd.arg("tmux");
     if let Ok(status) = cmd.status() {
         if status.success() {
-            return String::from_utf8_lossy(cmd.output().unwrap().stdout.as_ref()).to_string();
+            let tmux_path = String::from_utf8_lossy(cmd.output().unwrap().stdout.as_ref())
+                .trim()
+                .to_string();
+            cmd = ProcessCommand::new("tmux");
+            cmd.arg("-V");
+            if let Ok(status) = cmd.status() {
+                if status.success() {
+                    let tmux_version =
+                        String::from_utf8_lossy(cmd.output().unwrap().stdout.as_ref())
+                            .to_string()
+                            .split(' ')
+                            .last()
+                            .unwrap_or("")
+                            .trim()
+                            .to_string();
+                    return ApplicationTuple {
+                        binary: Some(tmux_path),
+                        version: Some(tmux_version),
+                    };
+                }
+            }
+            return ApplicationTuple {
+                binary: Some(tmux_path),
+                version: None,
+            };
         }
     }
-    "N/A".to_string()
+    ApplicationTuple {
+        binary: None,
+        version: None,
+    }
 }
 
 fn connection_mode_direct(close_on_exit: bool, auto_attach: bool, hosts: Vec<&str>) {
@@ -145,15 +214,27 @@ fn show_information() {
     let mut ascii_table = AsciiTable::default();
     ascii_table
         .column(0)
-        .set_header("Setting name")
+        .set_header("Application")
         .set_align(Align::Left);
     ascii_table
         .column(1)
-        .set_header("Setting value")
+        .set_header("Path")
+        .set_align(Align::Left);
+    ascii_table
+        .column(2)
+        .set_header("Version")
         .set_align(Align::Left);
 
-    let tmux_executable = determine_tmux_executable();
-    let data: Vec<Vec<&dyn Display>> = vec![vec![&"Used tmux executable", &tmux_executable]];
+    let tmux_infos = determine_tmux_executable_and_version();
+    let tmux_binary = tmux_infos.binary.unwrap_or("N/A".to_string());
+    let tmux_version = tmux_infos.version.unwrap_or("N/A".to_string());
+    let ssh_infos = determine_ssh_executable_and_version();
+    let ssh_binary = ssh_infos.binary.unwrap_or("N/A".to_string());
+    let ssh_version = ssh_infos.version.unwrap_or("N/A".to_string());
+    let data: Vec<Vec<&dyn Display>> = vec![
+        vec![&"tmux", &tmux_binary, &tmux_version],
+        vec![&"ssh", &ssh_binary, &ssh_version],
+    ];
     ascii_table.print(data);
 }
 
