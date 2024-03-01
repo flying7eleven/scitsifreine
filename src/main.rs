@@ -209,7 +209,11 @@ fn show_information() {
     let ssh_infos = get_application_information("ssh", "-V");
     let ssh_binary = ssh_infos.binary.unwrap_or("N/A".to_string());
     let ssh_version = ssh_infos.version.unwrap_or("N/A".to_string());
+    let scitsifreine_infos = get_application_information("scitsifreine", "--version");
+    let scitsifreine_binary = scitsifreine_infos.binary.unwrap_or("N/A".to_string());
+    let scitsifreine_version = scitsifreine_infos.version.unwrap_or("N/A".to_string());
     let data: Vec<Vec<&dyn Display>> = vec![
+        vec![&"scitsifreine", &scitsifreine_binary, &scitsifreine_version],
         vec![&"tmux", &tmux_binary, &tmux_version],
         vec![&"ssh", &ssh_binary, &ssh_version],
     ];
