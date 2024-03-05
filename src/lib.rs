@@ -1,5 +1,5 @@
 use log::{debug, error, trace};
-use std::process::Command;
+use std::process::{Command, Stdio};
 
 /// The number of required splits for the horizontal and vertical direction.
 #[derive(Debug)]
@@ -61,7 +61,7 @@ impl<'a> Tmux<'a> {
 
     /// Check if the tmux command is available on the computer.
     pub fn is_tmux_available() -> bool {
-        Tmux::execute_tmux_command(vec!["server-info"])
+        Tmux::execute_tmux_command(vec!["list-keys"], false)
     }
 
     /// TODO
@@ -112,9 +112,14 @@ impl<'a> Tmux<'a> {
     }
 
     /// Execute any tmux command and return if the command succeeded or not.
-    fn execute_tmux_command(arguments: Vec<&str>) -> bool {
+    fn execute_tmux_command(arguments: Vec<&str>, show_output: bool) -> bool {
         let mut cmd = Command::new("tmux");
         cmd.args(arguments.clone());
+        if !show_output {
+            cmd.stdout(Stdio::null());
+            cmd.stderr(Stdio::null());
+        }
+        cmd.stdin(Stdio::null());
 
         match cmd.status() {
             Ok(exit_code) => {
@@ -136,13 +141,15 @@ impl<'a> Tmux<'a> {
         debug!("Creating a new tmux session");
 
         // create a new session names by the used server (TODO: better naming with a large server list)
-        if !Tmux::execute_tmux_command(vec!["new-session", "-d", "-s", self.session_name.as_str()])
-        {
+        if !Tmux::execute_tmux_command(
+            vec!["new-session", "-d", "-s", self.session_name.as_str()],
+            true,
+        ) {
             return Err(TmuxExecutionErrors::CreateSession);
         }
 
         // rename the first window of the session to reflect the purpose
-        if !Tmux::execute_tmux_command(vec!["rename-window", "-t", "0", "ssh-sessions"]) {
+        if !Tmux::execute_tmux_command(vec!["rename-window", "-t", "0", "ssh-sessions"], true) {
             return Err(TmuxExecutionErrors::RenameWindow);
         }
 
@@ -163,7 +170,7 @@ impl<'a> Tmux<'a> {
                     "Executing a vertical split with {} splits remaining",
                     vertical_splits_remaining
                 );
-                if !Tmux::execute_tmux_command(vec!["split-window", "-v"]) {
+                if !Tmux::execute_tmux_command(vec!["split-window", "-v"], true) {
                     return Err(TmuxExecutionErrors::VerticalSplit);
                 }
                 vertical_splits_remaining -= 1;
@@ -171,18 +178,17 @@ impl<'a> Tmux<'a> {
 
             while horizontal_splits_remaining > 0 {
                 debug!("Selecting pane {}", pane_idx);
-                if !Tmux::execute_tmux_command(vec![
-                    "select-pane",
-                    "-t",
-                    pane_idx.to_string().as_str(),
-                ]) {
+                if !Tmux::execute_tmux_command(
+                    vec!["select-pane", "-t", pane_idx.to_string().as_str()],
+                    true,
+                ) {
                     return Err(TmuxExecutionErrors::SelectPane);
                 }
                 debug!(
                     "Executing a horizontal split with {} splits remaining",
                     horizontal_splits_remaining
                 );
-                if !Tmux::execute_tmux_command(vec!["split-window", "-h"]) {
+                if !Tmux::execute_tmux_command(vec!["split-window", "-h"], true) {
                     return Err(TmuxExecutionErrors::HorizontalSplit);
                 }
                 pane_idx += 2;
@@ -201,22 +207,28 @@ impl<'a> Tmux<'a> {
                 "Opening ssh connection to {} in pane {}",
                 current_host, pane_idx
             );
-            if !Tmux::execute_tmux_command(vec![
-                "select-pane",
-                "-t",
-                pane_idx.to_string().as_str(),
-                "-T",
-                current_host,
-            ]) {
+            if !Tmux::execute_tmux_command(
+                vec![
+                    "select-pane",
+                    "-t",
+                    pane_idx.to_string().as_str(),
+                    "-T",
+                    current_host,
+                ],
+                true,
+            ) {
                 return Err(TmuxExecutionErrors::SelectPane);
             }
-            if !Tmux::execute_tmux_command(vec![
-                "send-keys",
-                "-t",
-                pane_idx.to_string().as_str(),
-                format!("ssh {current_host}").as_str(),
-                "C-m",
-            ]) {
+            if !Tmux::execute_tmux_command(
+                vec![
+                    "send-keys",
+                    "-t",
+                    pane_idx.to_string().as_str(),
+                    format!("ssh {current_host}").as_str(),
+                    "C-m",
+                ],
+                true,
+            ) {
                 return Err(TmuxExecutionErrors::SendKeysToSession);
             }
         }
@@ -225,11 +237,14 @@ impl<'a> Tmux<'a> {
 
     fn attach_session(&self) {
         debug!("Attaching to the newly generated session");
-        Tmux::execute_tmux_command(vec![
-            "attach-session",
-            "-t",
-            format!("{0}:0", self.session_name).as_str(),
-        ]);
+        Tmux::execute_tmux_command(
+            vec![
+                "attach-session",
+                "-t",
+                format!("{0}:0", self.session_name).as_str(),
+            ],
+            true,
+        );
     }
 
     /// Calculates how many horizontal and vertical splits are required to represent all ssh connections.
