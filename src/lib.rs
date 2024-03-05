@@ -65,8 +65,8 @@ impl<'a> Tmux<'a> {
     }
 
     /// TODO
-    pub fn open(&self) -> bool {
-        self.generate_session_name("multissh");
+    pub fn open(&mut self) -> bool {
+        self.session_name = self.generate_session_name("multissh");
         if let Err(error) = self.create_tmux_session_and_window() {
             match error {
                 TmuxExecutionErrors::CreateSession => error!(

@@ -171,7 +171,7 @@ fn connection_mode_direct(close_on_exit: bool, auto_attach: bool, hosts: Vec<&st
         "Using direct connection mode to connect to {} hosts",
         hosts.len()
     );
-    let tmux_connection = Tmux::new(hosts, close_on_exit, auto_attach);
+    let mut tmux_connection = Tmux::new(hosts, close_on_exit, auto_attach);
     tmux_connection.open();
 }
 
