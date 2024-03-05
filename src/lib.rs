@@ -70,11 +70,11 @@ impl<'a> Tmux<'a> {
         if let Err(error) = self.create_tmux_session_and_window() {
             match error {
                 TmuxExecutionErrors::CreateSession => error!(
-                    "Could not create new tmux session with the session name {}",
+                    "Could not create new tmux session with the session name '{}'",
                     self.session_name
                 ),
                 TmuxExecutionErrors::RenameWindow => error!(
-                    "Could not create and rename a window in the tmux session with the name {}",
+                    "Could not create and rename a window in the tmux session with the name '{}'",
                     self.session_name
                 ),
                 _ => error!("Unexpected error occurred while creating a new tmux session"),
@@ -83,10 +83,10 @@ impl<'a> Tmux<'a> {
         }
         if let Err(error) = self.create_split_panes() {
             match error {
-                TmuxExecutionErrors::VerticalSplit => error!("Could not create a vertical split in the tmux session {}", self.session_name),
-                TmuxExecutionErrors::HorizontalSplit => error!("Could not create a horizontal split in the tmux session {}", self.session_name),
-                TmuxExecutionErrors::SelectPane => error!("Could not select a pane in the tmux session {}", self.session_name),
-                TmuxExecutionErrors::CalculateSplittingForHosts => println!("Could not calculate the required splittings for the list of supplied {} hosts", self.hosts.len()),
+                TmuxExecutionErrors::VerticalSplit => error!("Could not create a vertical split in the tmux session '{}'", self.session_name),
+                TmuxExecutionErrors::HorizontalSplit => error!("Could not create a horizontal split in the tmux session '{}'", self.session_name),
+                TmuxExecutionErrors::SelectPane => error!("Could not select a pane in the tmux session '{}'", self.session_name),
+                TmuxExecutionErrors::CalculateSplittingForHosts => println!("Could not calculate the required splittings for the list of supplied '{}' hosts", self.hosts.len()),
                 _ =>  error!("Unexpected error occurred while creating the required panes for the ssh connection to all hosts")
             }
             return false;
@@ -94,11 +94,11 @@ impl<'a> Tmux<'a> {
         if let Err(error) = self.open_ssh_connections() {
             match error {
                 TmuxExecutionErrors::SelectPane => error!(
-                    "Failed to select a pane of the tmux session {}",
+                    "Failed to select a pane of the tmux session '{}'",
                     self.session_name
                 ),
                 TmuxExecutionErrors::SendKeysToSession => error!(
-                    "Failed to send keys to a pane of the tmux session {}",
+                    "Failed to send keys to a pane of the tmux session '{}'",
                     self.session_name
                 ),
                 _ => error!("Unexpected error occurred while opening the ssh connection to a host"),
@@ -126,7 +126,7 @@ impl<'a> Tmux<'a> {
                 if exit_code.success() {
                     return true;
                 }
-                trace!("Tmux process exited with the exit code {} was called with the following arguments: {}", exit_code.code().unwrap_or(-1), arguments.join(","));
+                trace!("Tmux process exited with the exit code {} was called with the following arguments: '{}'", exit_code.code().unwrap_or(-1), arguments.join(","));
                 false
             }
             Err(error) => {
@@ -204,7 +204,7 @@ impl<'a> Tmux<'a> {
     fn open_ssh_connections(&self) -> Result<(), TmuxExecutionErrors> {
         for (pane_idx, current_host) in self.hosts.iter().enumerate() {
             debug!(
-                "Opening ssh connection to {} in pane {}",
+                "Opening ssh connection to '{}' in pane {}",
                 current_host, pane_idx
             );
             if !Tmux::execute_tmux_command(
@@ -264,7 +264,7 @@ impl<'a> Tmux<'a> {
     /// Generate a valid session name based on the hosts we should connect to.
     fn generate_session_name(&self, prefix: &str) -> String {
         debug!(
-            "Generating session name for a new connection with the prefix {}",
+            "Generating session name for a new connection with the prefix '{}'",
             prefix
         );
         let mut session_name = format!("{prefix}-");
